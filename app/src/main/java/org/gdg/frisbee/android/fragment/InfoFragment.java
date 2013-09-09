@@ -16,7 +16,9 @@
 
 package org.gdg.frisbee.android.fragment;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Html;
@@ -26,20 +28,23 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
-import android.widget.TextView;
+import android.widget.*;
+
 import com.github.rtyley.android.sherlock.roboguice.fragment.RoboSherlockFragment;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.plus.PlusClient;
 import com.google.api.client.googleapis.services.json.CommonGoogleJsonClientRequestInitializer;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.plus.Plus;
 import com.google.api.services.plus.model.Person;
+
 import java.io.IOException;
+
+import org.gdg.frisbee.android.Const;
 import org.gdg.frisbee.android.R;
+import org.gdg.frisbee.android.activity.GdgActivity;
 import org.gdg.frisbee.android.api.GapiTransportChooser;
 import org.gdg.frisbee.android.app.App;
 import org.gdg.frisbee.android.cache.ModelCache;
@@ -47,6 +52,7 @@ import org.gdg.frisbee.android.task.Builder;
 import org.gdg.frisbee.android.task.CommonAsyncTask;
 import org.gdg.frisbee.android.utils.Utils;
 import org.joda.time.DateTime;
+
 import de.keyboardsurfer.android.widget.crouton.Crouton;
 import de.keyboardsurfer.android.widget.crouton.Style;
 import roboguice.inject.InjectView;
@@ -93,6 +99,7 @@ public class InfoFragment extends RoboSherlockFragment {
     private LayoutInflater mInflater;
 
     private Builder<String, Person[]> mFetchOrganizerInfo;
+    private SharedPreferences mPreferences;
 
     public static InfoFragment newInstance(String plusId) {
         InfoFragment fragment = new InfoFragment();
@@ -107,6 +114,14 @@ public class InfoFragment extends RoboSherlockFragment {
         super.onActivityCreated(savedInstanceState);
 
         mInflater = LayoutInflater.from(getActivity());
+        mPreferences = getActivity().getSharedPreferences("gdg", Context.MODE_PRIVATE);
+
+        final PlusClient plusClient;
+        if (((GdgActivity) getActivity()).getPlayServicesHelper() != null) {
+            plusClient = ((GdgActivity) getActivity()).getPlayServicesHelper().getPlusClient();
+        } else {
+            plusClient = null;
+        }
 
         mClient = new Plus.Builder(mTransport, mJsonFactory, null).setGoogleClientRequestInitializer(new CommonGoogleJsonClientRequestInitializer(getString(R.string.ip_simple_api_access_key))).setApplicationName("GDG Frisbee").build();
 
@@ -195,6 +210,9 @@ public class InfoFragment extends RoboSherlockFragment {
                             mTagline.setText(person.getTagline());
                             mAbout.setText(Html.fromHtml(person.getAboutMe()));
 
+                            // clear home gdg organizer flag
+                            mPreferences.edit().putString(Const.SETTINGS_ME_ORGANIZER_OF_HOME_GDG, null).apply();
+
                             for(Person.Urls url: person.getUrls()) {
                                 if(url.getValue().contains("plus.google.com/")){
                                     if(url.getValue().contains("communities")) {
@@ -202,7 +220,15 @@ public class InfoFragment extends RoboSherlockFragment {
                                     } else {
                                         String org = url.getValue();
                                         try {
-                                        mFetchOrganizerInfo.addParameter(url.getValue().replace("plus.google.com/", "").replace("posts","").replace("/","").replace("about","").replace("u1","").replace("u0","").replace("https:","").replace("http:","").replace(getArguments().getString("plus_id"), "").replaceAll("[^\\d.]", "").substring(0,21));
+                                            String gplusId = url.getValue().replace("plus.google.com/", "").replace("posts", "").replace("/", "").replace("about", "").replace("u1", "").replace("u0", "").replace("https:", "").replace("http:", "").replace(getArguments().getString("plus_id"), "").replaceAll("[^\\d.]", "").substring(0, 21);
+                                            mFetchOrganizerInfo.addParameter(gplusId);
+
+                                            if (plusClient != null && plusClient.getCurrentPerson() != null){
+                                                String organizerId = plusClient.getCurrentPerson().getId();
+                                                if (gplusId.equals(organizerId)){
+                                                    setUserAsOrganizer(plusClient.getCurrentPerson());
+                                                }
+                                            }
                                         } catch(Exception ex) {
                                             Crouton.makeText(getActivity(), String.format(getString(R.string.bogus_organizer), org), Style.ALERT);
                                         }
@@ -279,6 +305,24 @@ public class InfoFragment extends RoboSherlockFragment {
         }
     }
 
+    private void setUserAsOrganizer(com.google.android.gms.plus.model.people.Person person) {
+        SharedPreferences.Editor editor = mPreferences.edit();
+
+        if (mPreferences.getBoolean(Const.SETTINGS_FIRST_ME_ORGANIZER_OF_HOME_GDG, true)){
+            showCongratsToast(person);
+            editor.putBoolean(Const.SETTINGS_FIRST_ME_ORGANIZER_OF_HOME_GDG, false);
+        }
+
+        editor.putString(Const.SETTINGS_ME_ORGANIZER_OF_HOME_GDG, person.getId());
+        editor.apply();
+    }
+
+    private void showCongratsToast(com.google.android.gms.plus.model.people.Person person) {
+        View view = getActivity().getLayoutInflater().inflate(R.layout.view_congrats, null);
+        TextView text = (TextView) view.findViewById(R.id.text);
+        text.setText(getString(R.string.congrats, person.getDisplayName()));
+        Crouton.show(getActivity(), view);
+    }
 
     public void setIsLoading(boolean isLoading) {
 
@@ -323,7 +367,13 @@ public class InfoFragment extends RoboSherlockFragment {
                 .into(picture);
 
         TextView title = (TextView) convertView.findViewById(R.id.title);
-        title.setText(item.getDisplayName());
+        String userId = mPreferences.getString(Const.SETTINGS_ME_ORGANIZER_OF_HOME_GDG, null);
+
+        if (item.getId().equals(userId)){
+            title.setTextColor(android.R.color.holo_blue_bright);
+        } else {
+            title.setText(item.getDisplayName());
+        }
 
         return convertView;
     }

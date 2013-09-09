@@ -38,7 +38,7 @@
                 android:layout_height="wrap_content"
                 class="org.gdg.frisbee.android.view.ResizableImageView" android:id="@+id/view"
                 android:scaleType="matrix" android:src="@drawable/devfest_13" android:padding="25dip"/>
-          <LinearLayout
+          <ScrollView
                   android:orientation="vertical"
                   android:layout_width="fill_parent"
                   android:layout_height="wrap_content" android:background="@drawable/card_bg">
@@ -47,7 +47,7 @@
                       android:layout_height="wrap_content"
                       android:text="@string/devfest_description"
                       android:id="@+id/textView" android:padding="10dip"/>
-          </LinearLayout>
+          </ScrollView>
       </LinearLayout>
 
   </LinearLayout>

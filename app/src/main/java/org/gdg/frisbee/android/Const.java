@@ -30,6 +30,8 @@ public class Const {
     public static final String SETTINGS_GCM_REG_ID = "gdg_registration_id";
     public static final String SETTINGS_VERSION_CODE = "gdg_version_code";
     public static final String SETTINGS_HOME_GDG = "gdg_home";
+    public static final String SETTINGS_ME_ORGANIZER_OF_HOME_GDG = "me_organizer_of_gdg_home";
+    public static final String SETTINGS_FIRST_ME_ORGANIZER_OF_HOME_GDG = "first_me_organizer_of_gdg_home";
     public static final String SETTINGS_APP_STARTS = "gdg_app_starts";
     public static final String SETTINGS_VIDEOS_PLAYED = "gdg_app_videos_played";
     public static final String SETTINGS_GDL_VIDEOS_PLAYED = "gdg_app_gdl_video_played";
