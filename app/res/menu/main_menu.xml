@@ -7,6 +7,11 @@
     android:showAsAction="collapseActionView"
     android:menuCategory="secondary"/>
   <item
+    android:id="@+id/organizer_tools"
+    android:title="@string/organizer_tools"
+    android:showAsAction="collapseActionView"
+    android:menuCategory="secondary" />
+  <item
     android:id="@+id/about"
     android:title="@string/about"
     android:showAsAction="collapseActionView"

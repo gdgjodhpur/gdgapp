@@ -28,7 +28,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.*;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
 import com.github.rtyley.android.sherlock.roboguice.fragment.RoboSherlockFragment;
 import com.google.android.gms.maps.GoogleMap;
@@ -50,6 +53,7 @@ import org.gdg.frisbee.android.app.App;
 import org.gdg.frisbee.android.cache.ModelCache;
 import org.gdg.frisbee.android.task.Builder;
 import org.gdg.frisbee.android.task.CommonAsyncTask;
+import org.gdg.frisbee.android.utils.OrganizerManager;
 import org.gdg.frisbee.android.utils.Utils;
 import org.joda.time.DateTime;
 
@@ -181,8 +185,9 @@ public class InfoFragment extends RoboSherlockFragment {
                     }
                 });
 
+            final String groupId = getArguments().getString("plus_id");
         new Builder<String, Person>(String.class, Person.class)
-                .addParameter(getArguments().getString("plus_id"))
+                .addParameter(groupId)
                 .setOnBackgroundExecuteListener(new CommonAsyncTask.OnBackgroundExecuteListener<String, Person>() {
                     @Override
                     public Person doInBackground(String... params) {
@@ -210,8 +215,12 @@ public class InfoFragment extends RoboSherlockFragment {
                             mTagline.setText(person.getTagline());
                             mAbout.setText(Html.fromHtml(person.getAboutMe()));
 
-                            // clear home gdg organizer flag
-                            mPreferences.edit().putString(Const.SETTINGS_ME_ORGANIZER_OF_HOME_GDG, null).apply();
+                            String myGplusId = null;
+                            com.google.android.gms.plus.model.people.Person me = null;
+                            if (plusClient != null && plusClient.isConnected() && plusClient.getCurrentPerson() != null) {
+                                me = plusClient.getCurrentPerson();
+                                myGplusId = me.getId();
+                            }
 
                             for(Person.Urls url: person.getUrls()) {
                                 if(url.getValue().contains("plus.google.com/")){
@@ -223,11 +232,8 @@ public class InfoFragment extends RoboSherlockFragment {
                                             String gplusId = url.getValue().replace("plus.google.com/", "").replace("posts", "").replace("/", "").replace("about", "").replace("u1", "").replace("u0", "").replace("https:", "").replace("http:", "").replace(getArguments().getString("plus_id"), "").replaceAll("[^\\d.]", "").substring(0, 21);
                                             mFetchOrganizerInfo.addParameter(gplusId);
 
-                                            if (plusClient != null && plusClient.getCurrentPerson() != null){
-                                                String organizerId = plusClient.getCurrentPerson().getId();
-                                                if (gplusId.equals(organizerId)){
-                                                    setUserAsOrganizer(plusClient.getCurrentPerson());
-                                                }
+                                            if (gplusId.equals(myGplusId)){
+                                                OrganizerManager.setUserAsOrganizer(getActivity(), mPreferences, me, groupId);
                                             }
                                         } catch(Exception ex) {
                                             Crouton.makeText(getActivity(), String.format(getString(R.string.bogus_organizer), org), Style.ALERT);
@@ -305,25 +311,6 @@ public class InfoFragment extends RoboSherlockFragment {
         }
     }
 
-    private void setUserAsOrganizer(com.google.android.gms.plus.model.people.Person person) {
-        SharedPreferences.Editor editor = mPreferences.edit();
-
-        if (mPreferences.getBoolean(Const.SETTINGS_FIRST_ME_ORGANIZER_OF_HOME_GDG, true)){
-            showCongratsToast(person);
-            editor.putBoolean(Const.SETTINGS_FIRST_ME_ORGANIZER_OF_HOME_GDG, false);
-        }
-
-        editor.putString(Const.SETTINGS_ME_ORGANIZER_OF_HOME_GDG, person.getId());
-        editor.apply();
-    }
-
-    private void showCongratsToast(com.google.android.gms.plus.model.people.Person person) {
-        View view = getActivity().getLayoutInflater().inflate(R.layout.view_congrats, null);
-        TextView text = (TextView) view.findViewById(R.id.text);
-        text.setText(getString(R.string.congrats, person.getDisplayName()));
-        Crouton.show(getActivity(), view);
-    }
-
     public void setIsLoading(boolean isLoading) {
 
         if(isLoading == mLoading || getActivity() == null)
@@ -367,10 +354,11 @@ public class InfoFragment extends RoboSherlockFragment {
                 .into(picture);
 
         TextView title = (TextView) convertView.findViewById(R.id.title);
-        String userId = mPreferences.getString(Const.SETTINGS_ME_ORGANIZER_OF_HOME_GDG, null);
+        String userId = mPreferences.getString(Const.SETTINGS_ME_ORGANIZER, null);
+
 
         if (item.getId().equals(userId)){
-            title.setTextColor(android.R.color.holo_blue_bright);
+            title.setText(getString(R.string.me_organizer, item.getDisplayName()));
         } else {
             title.setText(item.getDisplayName());
         }

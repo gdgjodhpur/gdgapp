@@ -8,20 +8,20 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.google.android.gms.games.GamesClient;
 
-import de.keyboardsurfer.android.widget.crouton.Crouton;
-import de.keyboardsurfer.android.widget.crouton.Style;
 import org.gdg.frisbee.android.Const;
 import org.gdg.frisbee.android.R;
 import org.gdg.frisbee.android.adapter.DrawerAdapter;
+import org.gdg.frisbee.android.utils.OrganizerManager;
 import org.gdg.frisbee.android.utils.PlayServicesHelper;
 import org.gdg.frisbee.android.view.ActionBarDrawerToggleCompat;
 
+import de.keyboardsurfer.android.widget.crouton.Crouton;
+import de.keyboardsurfer.android.widget.crouton.Style;
 import roboguice.inject.InjectView;
 
 public abstract class GdgNavDrawerActivity extends GdgActivity {
@@ -139,7 +139,14 @@ public abstract class GdgNavDrawerActivity extends GdgActivity {
         com.actionbarsherlock.view.MenuInflater inflater = getSupportMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
         return true;
+    }
 
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem menuItem = menu.findItem(R.id.organizer_tools);
+        boolean isOrganizer = OrganizerManager.isOrganizer(mPreferences);
+        menuItem.setVisible(isOrganizer);
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
@@ -157,6 +164,9 @@ public abstract class GdgNavDrawerActivity extends GdgActivity {
                 return true;
             case R.id.about:
                 startActivity(new Intent(this, AboutActivity.class));
+                return true;
+            case R.id.organizer_tools:
+                startActivity(new Intent(this, OrganizerToolsActivity.class));
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
