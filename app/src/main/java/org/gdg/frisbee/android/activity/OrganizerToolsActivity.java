@@ -2,7 +2,6 @@ package org.gdg.frisbee.android.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.provider.Browser;
 import android.view.View;
 import android.widget.TextView;
 
@@ -12,7 +11,7 @@ import roboguice.inject.InjectView;
 
 public class OrganizerToolsActivity extends GdgActivity{
 
-    private static final int REQUEST_BOOKMARKS = 1;
+    private static final int REQUEST_MEDIA = 1;
 
     @InjectView(R.id.media_url)
     private TextView mMediaUrl;
@@ -30,10 +29,11 @@ public class OrganizerToolsActivity extends GdgActivity{
 
     }
 
-    public void onPickBookmarkClick(View target){
-        Intent intent = new Intent(Intent.ACTION_PICK);
-        intent.setData(Browser.BOOKMARKS_URI);
-        startActivityForResult(intent, REQUEST_BOOKMARKS);
+    public void onPickClick(View target){
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setDataAndType(null, "*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(intent, REQUEST_MEDIA);
     }
 
     public void onChromecastClick(View target){
@@ -45,7 +45,7 @@ public class OrganizerToolsActivity extends GdgActivity{
     @Override
     protected void onActivityResult(int requestCode, int responseCode, Intent intent) {
         if (responseCode == RESULT_OK){
-            if (requestCode == REQUEST_BOOKMARKS){
+            if (requestCode == REQUEST_MEDIA){
                 mMediaUrl.setText(intent.getData().toString());
             }
         }
