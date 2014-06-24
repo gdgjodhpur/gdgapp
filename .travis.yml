@@ -1,17 +1,33 @@
-language: java
-jdk: oraclejdk7
+language: android
+android:
+  components:
+    - build-tools-19.1.0
+    #pre installed on travis:
+    # - platform-tools
+    # - android-19
+    # - extra-android-m2repository
+    # - extra-google-m2repository
+  licenses:
+    - android-sdk-license-bcbbd656
+    - '.*intel.+'
+
 
 branches:
   only:
-    - master
+    - feature/fix_travis
     - release
 
 before_install:
   - sudo apt-get update -qq
   - if [ `uname -m` = x86_64 ]; then sudo apt-get install -qq --force-yes libgd2-xpm ia32-libs ia32-libs-multiarch; fi
   # download the latest android sdk and unzip
-  - wget http://dl.google.com/android/android-sdk_r22.6.2-linux.tgz
-  - tar xzf android-sdk_r22.6.2-linux.tgz
+  # - wget http://dl.google.com/android/android-sdk_r22.6.2-linux.tgz
+  # - tar xzf android-sdk_r22.6.2-linux.tgz
   - export ANDROID_HOME=`pwd`/android-sdk-linux
   - export PATH=${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
-  - echo "y" | android update sdk --filter platform-tools,android-16,extra-android-support,extra-android-m2repository --no-ui --obsolete --force
+  # - echo "y" | android update sdk --filter platform-tools,android-16,extra-android-support,extra-android-m2repository --no-ui --obsolete --force
+
+script:
+ - ./gradlew clean build
+
+
