@@ -28,9 +28,8 @@ import android.os.Environment;
 import android.os.StrictMode;
 import android.widget.Toast;
 
-import com.google.analytics.tracking.android.GAServiceManager;
-import com.google.analytics.tracking.android.GoogleAnalytics;
-import com.google.analytics.tracking.android.Tracker;
+import com.google.android.gms.analytics.GoogleAnalytics;
+import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.squareup.picasso.LruCache;
 import com.squareup.picasso.OkHttpDownloader;
@@ -132,14 +131,6 @@ public class App extends Application implements LocationListener {
                 .build();
         mPicasso.setDebugging(Const.DEVELOPER_MODE);
 
-        // Initialize GA
-        mGaInstance = GoogleAnalytics.getInstance(getApplicationContext());
-        mTracker = mGaInstance.getTracker(getString(R.string.ga_trackingId));
-        GAServiceManager.getInstance().setDispatchPeriod(0);
-        mTracker.setAppName(getString(R.string.app_name));
-        mTracker.setAnonymizeIp(true);
-        mGaInstance.setDefaultTracker(mTracker);
-
         mOrganizerChecker = new OrganizerChecker(this, mPreferences);
         mOrganizerChecker.setLastOrganizerCheckTime(mPreferences.getLong("organizer_check_time", 0));
         mOrganizerChecker.setLastOrganizerCheckId(mPreferences.getString("organizer_check_id", null));
@@ -196,6 +187,15 @@ public class App extends Application implements LocationListener {
     }
 
     public Tracker getTracker() {
+        if(mTracker == null) {
+            // Initialize GA
+            mGaInstance = GoogleAnalytics.getInstance(getApplicationContext());
+            mTracker = mGaInstance.newTracker(getString(R.string.ga_trackingId));
+
+            mTracker.setAppName(getString(R.string.app_name));
+            mTracker.setAnonymizeIp(true);
+        }
+
         return mTracker;
     }
 
