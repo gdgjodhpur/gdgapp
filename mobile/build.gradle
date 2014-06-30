@@ -22,6 +22,10 @@ android {
         preDexLibraries = preDexEnabled && !isTravis
     }
 
+    aaptOptions {
+        noCompress "apk"
+    }
+    
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 20
