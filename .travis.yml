@@ -2,11 +2,11 @@ language: android
 android:
   components:
     - build-tools-19.1.0
+    - extra-android-m2repository
+    - extra-google-m2repository
     #pre installed on travis:
     # - platform-tools
     # - android-19
-    # - extra-android-m2repository
-    # - extra-google-m2repository
   licenses:
     - android-sdk-license-bcbbd656
     - '.*intel.+'
